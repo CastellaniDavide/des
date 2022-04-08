@@ -32,7 +32,7 @@ Implementation of DES algorithm
 
 4 directories, 15 files
 ```
-# Changelog
+## Changelog
 des (00.01) focal; urgency=medium
 
   * Initial version
