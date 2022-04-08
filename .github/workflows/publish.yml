@@ -94,6 +94,7 @@ jobs:
         gpg --batch --passphrase ${{ secrets.GPG_PWS }} --import seckey.asc
         sudo echo "export GPGKEY=${{ secrets.GPG_KEY_ID }}" >> ~/.bashrc
         gpg --list-secret-keys
+        
     - name: Create Debian package
       run: |
         cd ..

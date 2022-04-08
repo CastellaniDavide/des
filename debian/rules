@@ -3,4 +3,4 @@
 	dh $@
 
 override_dh_auto_install:
-	$(MAKE) DESTDIR=$$(pwd)/debian/createstructure prefix=/usr install
+	$(MAKE) DESTDIR=$$(pwd)/debian/des prefix=/usr install
