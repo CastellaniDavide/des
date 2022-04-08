@@ -7,7 +7,6 @@ on:
 
 jobs:
   upgrade-documentation:
-    needs: [UML-export]
     runs-on: ubuntu-latest
     environment:
       name: documentation
