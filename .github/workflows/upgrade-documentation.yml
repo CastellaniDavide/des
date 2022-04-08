@@ -97,7 +97,7 @@ jobs:
         cat wiki/_Header.md > repo/docs/README.md
         cat wiki/Home.md >> repo/docs/README.md
         cat wiki/Directory-Structure.md >> repo/docs/README.md
-        echo "# Changelog" >> repo/docs/README.md
+        echo "## Changelog" >> repo/docs/README.md
         cat wiki/changelog >> repo/docs/README.md
         echo "" >> repo/docs/README.md
         cat wiki/_Footer.md >> repo/docs/README.md
