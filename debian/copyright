@@ -1,0 +1,8 @@
+Format: https://github.com/CastellaniDavide/des/blob/main/docs/LICENSE
+Upstream-Name: Castellani Davide
+Upstream-Contact: Castellani Davide <help@castellanidavide.it>
+Source: https://github.com/CastellaniDavide/des/blob/main/docs/LICENSE
+
+Files: *
+Copyright: 2022 Castellani Davide <help@castellanidavide.it>
+License: GNU

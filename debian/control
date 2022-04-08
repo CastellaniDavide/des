@@ -1,0 +1,13 @@
+Source: des
+Section: devel
+Priority: extra
+Maintainer: Castellani Davide <help@castellanidavide.it>
+Build-Depends: debhelper (>= 9), dh-virtualenv (>= 0.8), libcurl4-openssl-dev, libssl-dev
+Standards-Version: 4.5.0
+
+Package: des
+Architecture: any
+Pre-Depends: dpkg (>= 1.16.1), ${misc:Pre-Depends}
+Depends: ${misc:Depends}, ${shlibs:Depends}
+Description: Lets see https://github.com/CastellaniDavide/des
+    That is my project hosted on GitHub

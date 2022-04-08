@@ -1,0 +1,112 @@
+name: Publish des
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+jobs:
+  create-and-update-deb:
+    runs-on: ubuntu-latest
+    environment:
+      name: deb
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Get submodules
+      run: git submodule update --init
+
+    - name: Install dependencies
+      run: |
+        sudo add-apt-repository ppa:jyrki-pulliainen/dh-virtualenv
+        sudo apt-get update
+        sudo apt-get install build-essential debhelper devscripts equivs dh-virtualenv python3.8 gnupg gnupg2 libcurl4-openssl-dev libssl-dev -y
+
+    - uses: oprypin/find-latest-tag@v1
+      with:
+        repository: CastellaniDavide/des
+        releases-only: true 
+      id : latest
+
+    - name: Set envirorment varible(s)
+      run: |
+        echo "::set-output name=PUSH_PATH::$(curl -sL https://api.github.com/repos/CastellaniDavide/des/releases/latest | jq -r '.upload_url')"  
+        echo "::set-output name=VERSION_TAG::$(echo ${{ steps.latest.outputs.tag }} | sed 's/v//')"
+        echo "::set-output name=DEB_FILE::des_$(echo ${{ steps.latest.outputs.tag }} | sed 's/v//')_amd64.deb"
+      id: envirorment-variables
+
+    - name: Create .deb file
+      run: |
+        echo "3.0 (native)" > ./debian/source/format
+        dpkg-buildpackage -us -uc
+        mv ../${{ steps.envirorment-variables.outputs.DEB_FILE }} ./
+
+    - name: Upload deb
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.envirorment-variables.outputs.PUSH_PATH }}
+        asset_path: ${{ steps.envirorment-variables.outputs.DEB_FILE }}
+        asset_name: ${{ steps.envirorment-variables.outputs.DEB_FILE }}
+        asset_content_type: application/zip
+
+  ppa:
+    runs-on: ubuntu-latest
+    environment:
+      name: ppa
+      url: https://launchpad.net/~castellanidavide/+archive/ubuntu/school
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Get submodules
+      run: git submodule update --init
+
+    - name: Install dependencies
+      run: |
+        sudo add-apt-repository ppa:jyrki-pulliainen/dh-virtualenv
+        sudo apt-get update
+        sudo apt-get install build-essential debhelper devscripts equivs dh-virtualenv python3.8 gnupg gnupg2 libcurl4-openssl-dev libssl-dev -y
+
+    - uses: oprypin/find-latest-tag@v1
+      with:
+        repository: CastellaniDavide/des
+        releases-only: true 
+      id : latest
+
+    - name: Set envirorment varible(s)
+      run: |
+        echo "::set-output name=PUSH_PATH::$(curl -sL https://api.github.com/repos/CastellaniDavide/des/releases/latest | jq -r '.upload_url')"  
+        echo "::set-output name=VERSION_TAG::$(echo ${{ steps.latest.outputs.tag }} | sed 's/v//')"
+        echo "::set-output name=TAR_FILE::des_$(echo ${{ steps.latest.outputs.tag }} | sed 's/v//').orig.tar.gz"
+        echo "::set-output name=CHANGES_FILE::des_$(echo ${{ steps.latest.outputs.tag }} | sed 's/v//')_source.changes"
+      id: envirorment-variables
+
+    - name: gpg import 
+      run: |
+        echo "${{ secrets.GPG_PUBKEY }}" > pubkey.txt
+        echo "${{ secrets.GPG_SECKEY }}" > seckey.txt
+        echo "${{ secrets.GPG_OTRUST }}" > otrust.txt
+        LC_ALL=C tr -cd 0-9a-fA-F < pubkey.txt | xxd -r -p > pubkey.asc
+        LC_ALL=C tr -cd 0-9a-fA-F < seckey.txt | xxd -r -p > seckey.asc
+        gpg --batch --import pubkey.asc
+        gpg --batch --passphrase ${{ secrets.GPG_PWS }} --import seckey.asc
+        sudo echo "export GPGKEY=${{ secrets.GPG_KEY_ID }}" >> ~/.bashrc
+        gpg --list-secret-keys
+    - name: Create Debian package
+      run: |
+        cd ..
+        tar -czvf ${{ steps.envirorment-variables.outputs.TAR_FILE }} ./des
+        cd des
+        debuild -S -sa -k${{ secrets.GPG_KEY_ID }} -p"gpg --batch --passphrase ${{ secrets.GPG_PWS }} --pinentry-mode loopback"
+    
+    - name: Checks files
+      run: |
+        sudo apt install tree
+        tree ..
+
+    - name: dput
+      run: |
+        cd ..
+        dput ppa:castellanidavide/school ${{ steps.envirorment-variables.outputs.CHANGES_FILE }}
