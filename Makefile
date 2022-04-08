@@ -1,10 +1,10 @@
 prefix = /usr/local
 
 all:
-	gcc ./bin/des.cpp -o des
+	gcc ./bin/des.c -o des
 
 install:
-	gcc ./bin/des.cpp -o des
+	gcc ./bin/des.c -o des
 	echo "DESTDIR: $(DESTDIR)"
 	echo "prefix: $(prefix)"
 	install des $(DESTDIR)$(prefix)/bin
