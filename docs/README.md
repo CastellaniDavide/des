@@ -1,40 +1,42 @@
-# des-des
+# des
 [![GitHub license](https://img.shields.io/badge/license-GNU-green?style=flat)](https://github.com/CastellaniDavide/des/blob/main/docs/LICENSE)
-![Author](https://img.shields.io/badge/author-DavideC03-green?style=flat)
+![Author](https://img.shields.io/badge/author-Castellani%20Davide-green?style=flat)
 ![sys.platform supported](https://img.shields.io/badge/OS%20platform%20supported-all-blue?style=flat) 
 
 ##  Description 
 Implementation of DES algorithm
-![CastellaniDavide/des](https://opengraph.githubassets.com/83a4e33c1463be199da1eef3f53108ef3dcc97afbe4709f241724ccb5b9b39ad/CastellaniDavide/des)
+![CastellaniDavide/des](https://opengraph.githubassets.com/46d641aa0e88fd83a902d4cacc80ad6db9c06dc6f7effa26b67004d43e034266/CastellaniDavide/des)
 ##  Directory structure 
 
 ```
-
+../repo
+├── Makefile
 ├── bin # source code
-│   └── des
+│   └── des.c
+├── debian # debian control code
+│   ├── changelog
+│   ├── compat
+│   ├── control
+│   ├── copyright
+│   ├── des.dirs
+│   ├── rules
+│   └── source
+│       └── format
+├── des.1
+├── des.2
+├── des.in
 └── docs # documentation
-    ├── CHANGELOG.md
     ├── CODE_OF_CONDUCT.md
     ├── LICENSE
     └── README.md
 
-2 directories, 5 files
+4 directories, 15 files
 ```
-##  Changelog 
-Implementation of DES algorithm
+des (00.01) focal; urgency=medium
 
-- [ Changelog ](#changelog)
-  - [[01.01.01] - 2022-04-08](#010101---2022-04-08)
+  * Initial version
 
-
-### [10.01.01] - 2021-12-10
-- [v10-beta (des-des)](https://github.com/des/issues/5)
-  - [Optimize des](https://github.com/des/issues/7)
-  - [Automate documentation creation](https://github.com/des/issues/6)
-
-### [01.01.01] - 2022-04-08
- - Initial version
-
+ -- Castellani Davide <help@castellanidavide.it>  Fri, 8 Apr 2022 21:15:00 +1000
 ---
 Made w/ :heart: by Castellani Davide
 
