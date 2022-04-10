@@ -1,3 +1,0 @@
-[submodule "bin/global-libraries"]
-	path = bin/global-libraries
-	url = https://github.com/createstructure/libraries-createstructure
