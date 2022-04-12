@@ -5,14 +5,20 @@
 
 ##  Description 
 Implementation of DES algorithm
-![CastellaniDavide/des](https://opengraph.githubassets.com/46d641aa0e88fd83a902d4cacc80ad6db9c06dc6f7effa26b67004d43e034266/CastellaniDavide/des)
+![CastellaniDavide/des](https://opengraph.githubassets.com/2195f3d7fb190e44dd0a4b3b7a3a6d448bc5af19b492cbf1e88964cdb8fdef22/CastellaniDavide/des)
 ##  Directory structure 
 
 ```
 ../repo
 ├── Makefile
 ├── bin # source code
-│   └── des.c
+│   ├── des.c
+│   └── lib
+│       ├── base64.h
+│       ├── des.h
+│       ├── input.h
+│       ├── key.h
+│       └── tmp.h
 ├── debian # debian control code
 │   ├── changelog
 │   ├── compat
@@ -30,7 +36,7 @@ Implementation of DES algorithm
     ├── LICENSE
     └── README.md
 
-4 directories, 15 files
+5 directories, 20 files
 ```
 ## Changelog
 des (00.02) focal; urgency=medium
