@@ -72,6 +72,7 @@ jobs:
         echo "\`\`\`" >> Directory-Structure.md
         tree ../repo >> Directory-Structure.md
         echo "\`\`\`" >> Directory-Structure.md
+        echo "Total lines: $(( find ./ -name '../repo/bin/*.*' -print0 | xargs -0 cat ) | wc -l)" >> Directory-Structure.md
         sed -i 's/├── debian/├── debian # debian control code/g' Directory-Structure.md
         sed -i 's/bin/bin # source code/g' Directory-Structure.md
         sed -i 's/docs/docs # documentation/g' Directory-Structure.md

@@ -1,7 +1,7 @@
 /**
  * @file key.h
  * @author Davide Castellani (@DavideC03)
- * @brief
+ * @brief Manage keys
  */
 
 #ifndef KEY
@@ -9,12 +9,14 @@
 
 // Dependencies
 #include <stdio.h>
+#include <stdbool.h>
 #include <time.h>
 #include <stdlib.h>
 #include <inttypes.h>
+#include "binary.h"
 
 // Definitions
-#define DEBUG
+//#define DEBUG
 
 // Variabiles
 size_t bitsRotation[16] = {1, 1, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 1};
@@ -40,14 +42,21 @@ size_t PC2[48] = {
     46, 42, 50, 36, 29, 32};
 
 // Function declaration
-uint64_t generateKey();
-char *getNewKey();
+uint64_t generateKey(bool verbose);
+char *getNewKey(bool verbose);
 bool checkKey(uint64_t key);
-uint64_t *getSubKeys(u_int64_t key);
+uint64_t *getSubKeys(u_int64_t key, bool verbose);
 
 // Functions
-uint64_t generateKey()
+/**
+ * @brief Generate a new key
+ *
+ * @param verbose verbose
+ * @return uint64_t key
+ */
+uint64_t generateKey(bool verbose)
 {
+    // Dependencies declaration
     uint64_t key = 0;
     uint8_t checksum = 0;
     time_t t;
@@ -55,6 +64,11 @@ uint64_t generateKey()
     // Initialize random
     srand((unsigned)time(&t));
 
+    // Print
+    if (verbose)
+        printf("⚙️ Generating key:\n");
+
+    // Create key
     for (size_t i = 0; i < 8; ++i)
     {
         uint8_t tmp = rand() % 128;
@@ -68,19 +82,41 @@ uint64_t generateKey()
 
         key <<= 8;
         key |= (uint64_t)tmp;
+
+        // Print
+        if (verbose)
+            printf("\tPart %ld: %02x with checksum: %d\n", i, tmp, checksum);
     }
 
+    // Print
+    if (verbose)
+        printf("\tKey: %lx\n", key);
+
+    // Return
     return key;
 }
 
-char *getNewKey()
+/**
+ * @brief Get the New Key object
+ *
+ * @param verbose verbose
+ * @return char* printable key
+ */
+char *getNewKey(bool verbose)
 {
-    uint64_t key = generateKey();
+    uint64_t key = generateKey(verbose);
     uint8_t *ptr = (uint8_t *)&key;
 
-    return base64_encode(ptr, 8);
+    return base64_encode(ptr, 8, false);
 }
 
+/**
+ * @brief Check the key
+ *
+ * @param key the key to check
+ * @return true key is valid
+ * @return false key is damaged
+ */
 bool checkKey(uint64_t key)
 {
     uint8_t *ptr = (uint8_t *)&key;
@@ -98,11 +134,23 @@ bool checkKey(uint64_t key)
     return true;
 }
 
-uint64_t *getSubKeys(uint64_t key)
+/**
+ * @brief Get the Sub Keys object
+ *
+ * @param key key
+ * @param verbose verbose
+ * @return uint64_t* sub-keys
+ */
+uint64_t *getSubKeys(uint64_t key, bool verbose)
 {
+    // Dependencies declaration
     uint64_t *keys = malloc(16 * sizeof(uint64_t));
     u_int32_t C = 0;
     u_int32_t D = 0;
+
+    // Print
+    if (verbose)
+        printf("\tGenerating sub-keys:\n");
 
     // Permutation table 1 left (C) and right(D)
     for (size_t i = 0; i < 56 / 2; ++i)
@@ -117,7 +165,11 @@ uint64_t *getSubKeys(uint64_t key)
         C |= (key >> PC1[i]) & 1;
     }
 
-    // printf("C0: %x\nD0: %x\n", C, D);
+    // Print
+    if (verbose)
+        printf("\t\tInitial sub-key parts:\n\t\t\tC: %s\n\t\t\tD: %s\n",
+               getBinary(C, 32, 8),
+               getBinary(D, 32, 8));
 
     for (size_t i = 0; i < 16; ++i)
     {
@@ -128,8 +180,12 @@ uint64_t *getSubKeys(uint64_t key)
             D = 0x0fffffff & (D << 1) | 0x00000001 & (D >> 27);
         }
 
-        
-        //printf("C%d: %x\nD%d: %x\n", i + 1, C, i + 1, D);
+        // Print
+        if (verbose)
+            printf("\t\tSub-key %ld:\n\t\tC: %s\n\t\t\tD: %s\n",
+                i + 1,
+                getBinary(C, 32, 8),
+                getBinary(D, 32, 8));
 
         u_int64_t tmpKey = (((uint64_t)C) << 28) | (uint64_t)D; // C + D
 
@@ -140,11 +196,10 @@ uint64_t *getSubKeys(uint64_t key)
             keys[i] <<= 1;
             keys[i] |= (tmpKey >> (56 - PC2[j])) & 1;
         }
-        for(size_t j = 0; j < 48; ++j)
-            printf((keys[i] >> j) & 1 ? "1": "0");
-        printf("sk%ld\n", i + 1);
 
-        // printf("Sub-key %ld: 0x%lx\n", i, keys[i]);
+        // Print
+        if (verbose)
+            printf("\t\t\tsub-key: %s\n", getBinary(keys[i], 48, 8));
     }
 
     return keys;

@@ -13,9 +13,11 @@
 #include <string.h>
 #include <inttypes.h>
 #include <stdint.h>
+#include "key.h"
+#include "binary.h"
 
 // Definitions
-#define DEBUG
+//#define DEBUG
 
 // Variabiles
 uint8_t IP_schema[64] = {
@@ -91,14 +93,54 @@ size_t P[32] = {16, 7, 20, 21, 29, 12, 28, 17,
                 19, 13, 30, 6, 22, 11, 4, 25};
 
 // Function declaration
-uint64_t IP(uint64_t input);
-uint64_t FP(uint64_t input);
-uint64_t rounds(uint64_t message, uint64_t *keys, bool encrypt);
-uint32_t feistel(uint32_t input, uint64_t *keys, size_t round, bool encrypt);
+uint64_t des(uint64_t input, uint64_t key, bool encrypt, bool verbose);
+uint64_t IP(uint64_t input, bool verbose);
+uint64_t FP(uint64_t input, bool verbose);
+uint64_t rounds(uint64_t message, uint64_t *keys, bool encrypt, bool verbose);
+uint32_t feistel(uint32_t input, uint64_t *keys, size_t round, bool encrypt, bool verbose);
 uint64_t expansion(uint32_t input);
 
 // Functions
-uint64_t IP(uint64_t input)
+/**
+ * @brief des
+ *
+ * @param input input message
+ * @param key key
+ * @param encrypt true if encrypt, false if decrypt
+ * @param verbose verbose
+ * @return uint64_t output message
+ */
+uint64_t des(uint64_t input, uint64_t key, bool encrypt, bool verbose)
+{
+    // Print
+    if (verbose)
+        printf("⚙️ DES:\n\tOriginal message: %s\n", getBinary(input, 64, 8));
+
+    // IP
+    uint64_t IP_ = IP(input, verbose);
+    if (verbose)
+        printf("\tAfter IP: %s\n", getBinary(IP_, 64, 8));
+
+    // Rounds
+    uint64_t rounds_ = rounds(IP_, getSubKeys(key, verbose), encrypt, verbose);
+
+    // IP
+    uint64_t FP_ = FP(rounds_, verbose);
+    if (verbose)
+        printf("\tAfter FP: %s\n", getBinary(FP_, 64, 8));
+
+    // Return
+    return FP_;
+}
+
+/**
+ * @brief Initial Permutation
+ *
+ * @param input input message
+ * @param verbose verbose
+ * @return uint64_t output message
+ */
+uint64_t IP(uint64_t input, bool verbose)
 {
     uint64_t output = 0;
 
@@ -108,80 +150,156 @@ uint64_t IP(uint64_t input)
         output |= (input >> (64 - IP_schema[i])) & 1;
     }
 
-    // printf("Before IP: 0x%lx\nAfter IP: 0x%lx\n", input, output);
-
     return output;
 }
 
-uint64_t FP(uint64_t input)
+/**
+ * @brief Final Permutation
+ *
+ * @param input input message
+ * @param verbose verbose
+ * @return uint64_t output message
+ */
+uint64_t FP(uint64_t input, bool verbose)
 {
     uint64_t output = 0;
 
     for (size_t i = 0; i < 64; ++i)
     {
         output <<= 1;
-        output |= (input >> FP_schema[i]) & 1;
+        output |= (input >> 64 - FP_schema[i]) & 1;
     }
-
-    // printf("Before FP: 0x%lx\nAfter FP: 0x%lx\n", input, output);
 
     return output;
 }
 
-uint64_t rounds(uint64_t message, uint64_t *keys, bool encrypt)
+/**
+ * @brief 16 Rounds
+ *
+ * @param message input message
+ * @param keys 16 keys
+ * @param encrypt encrypt/ decrypt
+ * @param verbose verbose
+ * @return uint64_t message after the 16 rounds
+ */
+uint64_t rounds(uint64_t message, uint64_t *keys, bool encrypt, bool verbose)
 {
+    // Initial split
     uint32_t L = (uint32_t)(message >> 32) & UINT32_MAX;
     uint32_t R = (uint32_t)message & UINT32_MAX;
 
+    // Print
+    if (verbose)
+        printf("\tRounds:\n\t\tInitial:\n\t\t\tL0: %s\n\t\t\tR0: %s\n",
+               getBinary(L, 32, 8),
+               getBinary(R, 32, 8));
+
     for (size_t i = 0; i < 16; ++i)
     {
+        // Print
+        if (verbose)
+            printf("\t\tRound %ld:\n", i + 1);
+
+        // Do a round
         uint32_t tmp = R;
-        R = L ^ feistel(R, keys, i, encrypt);
+        R = L ^ feistel(R, keys, i, encrypt, verbose);
         L = tmp;
 
-        for (size_t j = 0; j < 32; ++j)
-            printf((R >> j) & 1 ? "1" : "0");
-        printf("R%ld\n", i + 1);
-        for (size_t j = 0; j < 32; ++j)
-            printf((L >> j) & 1 ? "1" : "0");
-        printf("L%ld\n", i + 1);
+        // Print
+        if (verbose)
+            printf("\t\t\tL%ld: %s\n\t\t\tR%ld: %s\n",
+                   i + 1,
+                   getBinary(L, 32, 8),
+                   i + 1,
+                   getBinary(R, 32, 8));
     }
 
     return (((uint64_t)R) << 32) | (uint64_t)L;
 }
 
-uint32_t feistel(uint32_t input, uint64_t *keys, size_t round, bool encrypt)
+/**
+ * @brief Feistel
+ *
+ * @param input input
+ * @param keys 16 sub-keys
+ * @param round n° of the round
+ * @param encrypt encrypt/ decrypt
+ * @param verbose verbose
+ * @return uint32_t feistel output
+ */
+uint32_t feistel(uint32_t input, uint64_t *keys, size_t round, bool encrypt, bool verbose)
 {
+    // Print
+    if (verbose)
+        printf("\t\t\tFeistel:\n\t\t\t\tInitial: %s\n",
+               getBinary(input, 32, 8));
+
     // Expand right part of the message
     uint64_t input2 = expansion(input);
+    if (verbose)
+        printf("\t\t\t\tAfter expansion: %s\n",
+               getBinary(input2, 48, 8));
 
     // Get the key
     uint64_t key = (encrypt ? keys[round] : keys[15 - round]);
+    if (verbose)
+        printf("\t\t\t\tKey: %s\n",
+               getBinary(key, 48, 8));
 
     // key XOR input2
     uint64_t keyXORinput2 = key ^ input2;
+    if (verbose)
+        printf("\t\t\t\tKey XOR after expansion: %s\n",
+               getBinary(keyXORinput2, 48, 8));
 
     // Sbox
     uint32_t sbox = 0;
+#ifdef DEBUG
+    if (verbose)
+        printf("\t\t\t\tSbox:\n");
+#endif // DEBUG
     for (size_t i = 0; i < 8; ++i)
     {
         // Get 6bit piece
-        uint8_t piece = (uint8_t)(keyXORinput2 >> (6 * i)) & 0b111111;
+        uint8_t piece = (uint8_t)(keyXORinput2 >> (6 * (8 - i - 1))) & 0b111111;
+#ifdef DEBUG
+        if (verbose)
+            printf("\t\t\t\t\tPart %ld:\n\t\t\t\t\t\tpiece: %s\n",
+                   i + 1,
+                   getBinary(piece, 6, 8));
+#endif // DEBUG
 
         // Get row ?xxxx?
         uint8_t row = (piece & 0b1) | ((piece & 100000) >> 4);
+#ifdef DEBUG
+        if (verbose)
+            printf("\t\t\t\t\t\trow: %s\n",
+                   getBinary(row, 2, 8));
+#endif // DEBUG
 
         // Get column x????x
         uint8_t column = (piece & 0b011110) >> 1;
+#ifdef DEBUG
+        if (verbose)
+            printf("\t\t\t\t\t\tcolumn: %s\n",
+                   getBinary(column, 4, 8));
+#endif // DEBUG
 
         // Get value
-        uint8_t value = S[8 - i - 1][row][column];
+        uint8_t value = S[i][row][column];
+#ifdef DEBUG
+        if (verbose)
+            printf("\t\t\t\t\t\tnew value: %s\n",
+                   getBinary(value, 4, 8));
+#endif // DEBUG
 
-        // Setr value into output;
-        sbox += (uint32_t)value * (1 << 4 * i);
-
-        //printf("Piece %ld: 0x%x\n\tRow: %x\n\tCol: %x\n\tValue: %x\n\tPartial output: %x\n", i + 1, piece, row, column, value, sbox);
+        // Set value into output;
+        sbox <<= 4;
+        sbox |= (uint32_t)value;
     }
+    if (verbose)
+        printf("\t\t\t\tAfter sbox: %s\n",
+               getBinary(sbox, 32, 8));
 
     // Final permutation
     uint32_t output = 0;
@@ -190,10 +308,19 @@ uint32_t feistel(uint32_t input, uint64_t *keys, size_t round, bool encrypt)
         output <<= 1;
         output |= (sbox >> (32 - P[i])) & 1;
     }
-    
+    if (verbose)
+        printf("\t\t\t\tAfter final permutation: %s\n",
+               getBinary(output, 32, 8));
+
     return output;
 }
 
+/**
+ * @brief Expansion
+ *
+ * @param input input
+ * @return uint64_t output
+ */
 uint64_t expansion(uint32_t input)
 {
     uint64_t output = 0;
@@ -201,7 +328,7 @@ uint64_t expansion(uint32_t input)
     for (size_t i = 0; i < 48; ++i)
     {
         output <<= 1;
-        output |= (uint64_t)(input >> (48 - E[i]) & 1);
+        output |= (uint64_t)(input >> (32 - E[i]) & 1);
     }
 
     // printf("Before expansion: 0x%x\nAfter expansion: 0x%lx\n", input, output);

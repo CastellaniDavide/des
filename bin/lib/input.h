@@ -13,9 +13,10 @@
 #include <string.h>
 #include <inttypes.h>
 #include "base64.h"
+#include "key.h"
 
 // Definitions
-#define DEBUG
+//#define DEBUG
 
 // Variabiles
 bool error = false;
@@ -25,6 +26,7 @@ size_t messageLength;
 
 // Function declaration
 bool getHelp(int argc, char *argv[]);
+bool getVerbose(int argc, char *argv[]);
 uint64_t getKey(int argc, char *argv[]);
 uint64_t *getMessage(int argc, char *argv[]);
 size_t getMessageLength();
@@ -32,29 +34,68 @@ bool getEncrypt(int argc, char *argv[]);
 bool getNewKeyRequest(int argc, char *argv[]);
 bool startsWith(const char *a, const char *b);
 int getIndex(int argc, char *argv[], char *string);
+bool manageInput(int argc, char *argv[]);
 
 // Functions
+/**
+ * @brief Get the Help object
+ *
+ * @param argc number of command line arguments
+ * @param argv command line arguments
+ * @return true help is needed
+ * @return false help isn't needed
+ */
 bool getHelp(int argc, char *argv[])
 {
     // Check if help is asked
     for (size_t i = 0; i < argc; ++i)
     {
-        if (argv[i] == "--help" || argv[i] == "-h")
+        if (strcmp(argv[i], "--help") == 0 || strcmp(argv[i], "-h") == 0)
             return true;
     }
 
     // Check inputs
     if (!getNewKeyRequest(argc, argv))
+    {
         getKey(argc, argv);
-    getMessage(argc, argv);
+        getMessage(argc, argv);
+    }
 
     return error;
 }
 
+/**
+ * @brief Get the Verbose object
+ *
+ * @param argc number of command line arguments
+ * @param argv command line arguments
+ * @return true verbose is asked
+ * @return false verbose isn't asked
+ */
+bool getVerbose(int argc, char *argv[])
+{
+    // Check if verbose
+    for (size_t i = 0; i < argc; ++i)
+    {
+        if (strcmp(argv[i], "--verbose") == 0 || strcmp(argv[i], "-v") == 0)
+            return true;
+    }
+    return false;
+}
+
+/**
+ * @brief Get the Key object
+ *
+ * @param argc number of command line arguments
+ * @param argv command line arguments
+ * @return uint64_t key
+ */
 uint64_t getKey(int argc, char *argv[])
 {
+    // Check if key was already readed
     if (salvedKey == 0)
     {
+        // check if key argument is passed
         char *k = "--key=";
         int index = getIndex(argc, argv, k);
 
@@ -64,27 +105,35 @@ uint64_t getKey(int argc, char *argv[])
         }
         else
         {
+            // Get base64 key
             u_int8_t *tmp = argv[index] + strlen(k);
+
+            // Convert key
             uint64_t key = 0;
 
-            // printf("%ld, %s\n", strlen(tmp), tmp);
-
-            tmp = base64_decode(tmp, strlen(tmp));
+            tmp = base64_decode(tmp, strlen(tmp), false);
 
             for (int i = 7; i >= 0; --i)
             {
                 key <<= 8;
                 key |= (uint64_t)(tmp[i]);
-                // printf("%d ==> %lx\n", i, (uint64_t)key);
             }
 
             salvedKey = key;
         }
     }
+
     // printf("key: %lx\n", salvedKey);
     return (uint64_t)salvedKey;
 }
 
+/**
+ * @brief Get the Message object
+ *
+ * @param argc number of command line arguments
+ * @param argv command line arguments
+ * @return uint64_t* message
+ */
 uint64_t *getMessage(int argc, char *argv[])
 {
     if (!salvedMessage)
@@ -100,68 +149,80 @@ uint64_t *getMessage(int argc, char *argv[])
         else
         {
             message = argv[index] + strlen(m);
-            if (getEncrypt(argc, argv))
-            {
-                messageLength = (strlen(message) + 8 - 1) / 8;
-                uint64_t *result = malloc(sizeof(uint64_t) * messageLength);
-                for (size_t i = 0; i < messageLength; ++i)
-                {
-                    for (int j = 7; j >= 0; --j)
-                    {
-                        result[i] <<= 8;
-                        result[i] |= (uint64_t)(message[8 * i + j]);
-                    }
-                }
-                salvedMessage = result;
-            }
-            else
-            {
-                uint8_t *tmp = base64_decode(message, sizeof(message));
-                messageLength = (getLastBase64Length() + 8 - 1) / 8;
-                uint64_t *result = malloc(sizeof(uint64_t) * messageLength);
+            uint8_t *tmp = base64_decode(message, strlen(message), false);
+            messageLength = (getLastBase64Length() + 8 - 1) / 8;
+            uint64_t *result = malloc(sizeof(uint64_t) * messageLength);
 
-                for (size_t i = 0; i < messageLength; ++i)
+            for (size_t i = 0; i < messageLength; ++i)
+            {
+                result[i] = 0;
+                for (size_t j = 0; j < 8; ++j)
                 {
-                    result[i] = 0;
-                    for (size_t j = 0; j < 8; ++j)
-                    {
-                        result[i] <<= 8;
-                        if (i * 8 + j < getLastBase64Length())
-                            result[i] |= tmp[i * 8 + j] & 0xff;
-                    }
+                    result[i] <<= 8;
+                    if (i * 8 + j < getLastBase64Length())
+                        result[i] |= tmp[i * 8 + j] & 0xff;
                 }
-                salvedMessage = result;
             }
+            salvedMessage = result;
         }
     }
     return salvedMessage;
 }
 
+/**
+ * @brief Get the Message Length object
+ *
+ * @return size_t message length
+ */
 size_t getMessageLength()
 {
     return messageLength;
 }
 
+/**
+ * @brief Get the Encrypt object
+ *
+ * @param argc number of command line arguments
+ * @param argv command line arguments
+ * @return true is encryption is asked
+ * @return false is decryption is asked
+ */
 bool getEncrypt(int argc, char *argv[])
 {
     for (size_t i = 0; i < argc; ++i)
     {
-        if (argv[i] == "--decrypt" || argv[i] == "-d")
+        if (strcmp(argv[i], "--decrypt") == 0 || strcmp(argv[i], "-d") == 0)
             return false;
     }
     return true;
 }
 
+/**
+ * @brief Get the New Key Request object
+ *
+ * @param argc number of command line arguments
+ * @param argv command line arguments
+ * @return true if new key is asked
+ * @return false if new key isn't asked
+ */
 bool getNewKeyRequest(int argc, char *argv[])
 {
     for (size_t i = 0; i < argc; ++i)
     {
-        if (argv[i] == "--new-key" || argv[i] == "-nk")
+        if (strcmp(argv[i], "--new-key") == 0 || strcmp(argv[i], "-nk") == 0 || strcmp(argv[i], "--generate-key") == 0 || strcmp(argv[i], "-gk") == 0)
             return true;
     }
     return false;
 }
 
+/**
+ * @brief Check if a string starts with another one
+ *
+ * @param a "long" string
+ * @param b "short" string
+ * @return true if a starts with b
+ * @return false if a don't start with b
+ */
 bool startsWith(const char *a, const char *b)
 {
     if (strncmp(a, b, strlen(b)) == 0)
@@ -169,6 +230,14 @@ bool startsWith(const char *a, const char *b)
     return 0;
 }
 
+/**
+ * @brief Get the Index object
+ *
+ * @param argc number of command line arguments
+ * @param argv command line arguments
+ * @param string string to search
+ * @return int the index in argv of the string; -1 if didn't exist
+ */
 int getIndex(int argc, char *argv[], char *string)
 {
     for (size_t i = 0; i < argc; ++i)
@@ -177,6 +246,81 @@ int getIndex(int argc, char *argv[], char *string)
             return i;
     }
     return -1;
+}
+
+/**
+ * @brief Manage the input, eg. help
+ *
+ * @param argc number of command line arguments
+ * @param argv command line arguments
+ * @return true if it's needed to end the execution
+ * @return false if it's not needed to end the execution
+ *
+ */
+bool manageInput(int argc, char *argv[])
+{
+    // get verbose
+    bool verbose = getVerbose(argc, argv);
+
+    // if verbose print command line arguments
+    if (verbose)
+    {
+        printf("ℹ️ Command line arguments:\n");
+
+        for (size_t i = 0; i < argc; ++i)
+        {
+            printf("\t- %ld: %s\n", i, argv[i]);
+        }
+    }
+
+    // Get verbose
+    if (verbose)
+        printf("ℹ️ Verbose: %s\n", (verbose ? "true" : "false"));
+
+    // Check if new key is asked
+    if (verbose)
+        printf("ℹ️ Check new key request\n");
+    if (getNewKeyRequest(argc, argv))
+    {
+        printf("➡️ New key generated: %s\n", getNewKey(verbose));
+        return true;
+    }
+    // Check if help
+    if (verbose)
+        printf("ℹ️ Check help\n");
+    if (getHelp(argc, argv))
+    {
+        system("man 1 des");
+        return true;
+    }
+
+    // Check if new key is asked
+    if (verbose)
+        printf("ℹ️ Check new key request\n");
+    if (getNewKeyRequest(argc, argv))
+    {
+        printf("➡️ New key generated: %s\n", getNewKey(verbose));
+        return true;
+    }
+
+    // Check key
+    if (verbose)
+        printf("ℹ️ Check given key\n");
+    if (!checkKey(getKey(argc, argv)))
+    {
+        printf("⚠️⚠️⚠️\nThe key is damaged.\nPlease generate a new one.\n");
+        return true;
+    }
+
+    // Get encryption
+    if (verbose)
+        printf("ℹ️ Encryption: %s\n", (verbose ? "true" : "false"));
+
+    // End message
+    if (verbose)
+        printf("ℹ️ Command line arguments: ok\n");
+
+    return false;
 }
 
 #undef DEBUG

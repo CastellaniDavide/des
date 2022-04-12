@@ -3,84 +3,64 @@
 #include <stdbool.h>
 #include <string.h>
 #include <inttypes.h>
+#include <time.h>
 #include "lib/base64.h"
 #include "lib/input.h"
-#include "lib/key.h"
 #include "lib/des.h"
+#include "lib/logo.h"
 
 // Definitions
-#define DEBUG
+//#define DEBUG
 
 int main(int argc, char *argv[])
 {
-    // Test input
-    char *tmp[] = {"-", "--key=EzRXeZu83/E=", "--message=1vdapnyQx2k="};
-    argv = tmp;
-    argc = 3;
+    // Start stopwatch
+    clock_t start, end;
+    double cpu_time_used;
+    start = clock();
 
-    // Check if help
-    if (getHelp(argc, argv))
-    {
-        system("man 1 des");
+    // Get verbose
+    bool verbose = getVerbose(argc, argv);
+
+    // Logo
+    if (verbose)
+        getLogo();
+
+    // Manage input
+    if (manageInput(argc, argv))
         return 0;
-    }
 
-    // Check if new key is asked
-    if (getNewKeyRequest(argc, argv))
-    {
-        printf("New key generated: %s\n", getNewKey());
-        return 0;
-    }
-
-    // Check key
-    uint64_t key = getKey(argc, argv);
-    if (!checkKey(key))
-    {
-        printf(
-            "%s\n%s\n",
-            "The key is damaged.",
-            "Please generate a new one.");
-        return 0;
-    }
-
-    // Get if encryption or decryption asked
-    bool encrypt = getEncrypt(argc, argv);
-
-    // Get sub-keys
-    uint64_t *subKeys = getSubKeys(key);
-
-    // Get message
-    uint64_t *message = getMessage(argc, argv);
-//*
-    uint64_t tmp222 = IP(0b0000000100100011010001010110011110001001101010111100110111101111);
-    tmp222 = rounds(tmp222, subKeys, encrypt);
-
-    for(size_t j = 0; j < 64; ++j)
-            printf((tmp222 >> j) & 1 ? "1": "0");
-        printf("\n");
-/* /
+    // DES
+    uint64_t *m = malloc(getMessageLength() * sizeof(uint64_t));
     for (size_t i = 0; i < getMessageLength(); ++i)
-    {
-
-        // Intial Permutation
-        message[i] = IP(message[i]);
-
-        // Rounds
-        message[i] = rounds(message[i], subKeys, encrypt);
-
-        // Final permuation
-        message[i] = FP(message[i]);
-    }
+        m[i] = des(
+            getMessage(argc, argv)[i],
+            getKey(argc, argv),
+            getEncrypt(argc, argv),
+            verbose);
 
     // Encode base64
-    uint8_t *m = (uint8_t *)&message[0];
-    char *output = base64_encode(m, 8 * getMessageLength());
+    size_t len = getMessageLength() * sizeof(uint64_t);
+    uint8_t *m8bit = malloc(len);
+    for (size_t i = 0; i < getMessageLength(); ++i)
+        for (size_t j = 0; j < 8; ++j)
+            m8bit[8 * i + j] = (u_int8_t)(m[i] >> (64 - 8 * (j + 1)));
+
+    while (m8bit[len - 1] == 0) // "Remove" \0 bytes
+        len--;
+
+    char *output = base64_encode(m8bit, len, verbose);
+
+    // Stop stopwatch
+    end = clock();
+    cpu_time_used = ((double)(end - start)) / CLOCKS_PER_SEC;
 
     // Print output
-    printf("%s message: %s",
-           (encrypt ? "Encrypted" : "Decrypted"),
-           output);
-*/
+    printf("%s message: %s\nIn %0.3fms",
+           (getEncrypt(argc, argv) ? "Encrypted" : "Decrypted"),
+           output,
+           cpu_time_used);
+
     return 0;
 }
 

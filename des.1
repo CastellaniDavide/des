@@ -1,16 +1,23 @@
 .\" This description page for des
-.TH des "1" "2022-03-12" "des 00.01" "User Commands"
+.TH des "1" "2022-03-12" "des 01.01" "User Commands"
 .SH NAME
 des
+
+.SH DESCRIPTION
+This is the man documentation of des.
+
 .SH SYNOPSIS
-.B des - launch application
-.br
 .B des [--help | -h] - Help
 .br
-.B des [--login | -l] - Login with help
+.B des [--verbose | -v] - Enable verbose
 .br
-.B des [--login | -l] [--username | -u] [--token | -t] - Login without any input request
-.SH DESCRIPTION
-Repo containing the clientside for Ubuntu/Debian
+.B des [--decrypt | -d] - Decrypt, otherwise encrypt
+.br
+.B des [--new-key | -nk | --generate-key | -gk] - Request a new key
+.br
+.B des --key=... - Get the key
+.br
+.B des --message=... - Get the message base64encoded
+
 .SH AUTHORS
 Castellani Davide (@DavideC03): owner

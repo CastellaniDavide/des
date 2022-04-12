@@ -1,3 +1,9 @@
+des (01.01) focal; urgency=medium
+
+  * DES algorithm completed
+
+ -- Castellani Davide <help@castellanidavide.it>  Tue, 12 Apr 2022 23:00:00 +1000
+
 des (00.02) focal; urgency=medium
 
   * Fixed a bug
