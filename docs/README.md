@@ -11,11 +11,11 @@ Implementation of DES algorithm
 ```
 ../repo
 ├── Makefile
-├── bin # source code
+├── bin
 │   ├── des.c
 │   └── lib
 │       ├── base64.h
-│       ├── bin # source codeary.h
+│       ├── binary.h
 │       ├── des.h
 │       ├── input.h
 │       ├── key.h
@@ -38,7 +38,6 @@ Implementation of DES algorithm
 
 5 directories, 20 files
 ```
-Total lines: 0
 ## Changelog
 des (01.01) focal; urgency=medium
 
