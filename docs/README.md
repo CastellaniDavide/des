@@ -15,10 +15,11 @@ Implementation of DES algorithm
 │   ├── des.c
 │   └── lib
 │       ├── base64.h
+│       ├── bin # source codeary.h
 │       ├── des.h
 │       ├── input.h
 │       ├── key.h
-│       └── tmp.h
+│       └── logo.h
 ├── debian # debian control code
 │   ├── changelog
 │   ├── compat
@@ -29,7 +30,6 @@ Implementation of DES algorithm
 │   └── source
 │       └── format
 ├── des.1
-├── des.2
 ├── des.in
 └── docs # documentation
     ├── CODE_OF_CONDUCT.md
@@ -38,7 +38,14 @@ Implementation of DES algorithm
 
 5 directories, 20 files
 ```
+Total lines: 0
 ## Changelog
+des (01.01) focal; urgency=medium
+
+  * DES algorithm completed
+
+ -- Castellani Davide <help@castellanidavide.it>  Tue, 12 Apr 2022 23:00:00 +1000
+
 des (00.02) focal; urgency=medium
 
   * Fixed a bug
