@@ -39,6 +39,12 @@ Implementation of DES algorithm
 5 directories, 20 files
 ```
 ## Changelog
+des (01.02) focal; urgency=medium
+
+  * fixed a bug
+
+ -- Castellani Davide <help@castellanidavide.it>  Tue, 12 Apr 2022 23:15:00 +1000
+
 des (01.01) focal; urgency=medium
 
   * DES algorithm completed
