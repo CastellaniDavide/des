@@ -56,10 +56,10 @@ int main(int argc, char *argv[])
     cpu_time_used = ((double)(end - start)) / CLOCKS_PER_SEC;
 
     // Print output
-    printf("%s message: %s\nIn %0.3fms\n",
+    printf("%s message: %s\nIn %0.3fµs\n",
            (getEncrypt(argc, argv) ? "Encrypted" : "Decrypted"),
            output,
-           cpu_time_used);
+           cpu_time_used * 1000);
 
     return 0;
 }
