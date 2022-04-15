@@ -1,5 +1,5 @@
 .\" This description page for des
-.TH des "1" "2022-04-12" "des 01.02" "User Commands"
+.TH des "1" "2022-04-15" "des 02.01" "User Commands"
 .SH NAME
 des
 
@@ -9,7 +9,13 @@ This is the man documentation of des.
 .SH SYNOPSIS
 .B des [--help | -h] - Help
 .br
+.B des --version - Return des version
+.br
 .B des [--verbose | -v] - Enable verbose
+.br
+.B des [--text | -txt] - Define text the unencrypted input/ output (up to 16MB)
+.br
+.B des --file-input=... --file-output=... - Work with files
 .br
 .B des [--decrypt | -d] - Decrypt, otherwise encrypt
 .br
@@ -17,7 +23,7 @@ This is the man documentation of des.
 .br
 .B des --key=... - Get the key
 .br
-.B des --message=... - Get the message base64encoded
+.B des --message=... - Get the message (base64 encoded by default)
 
 .SH AUTHORS
 Castellani Davide (@DavideC03): owner

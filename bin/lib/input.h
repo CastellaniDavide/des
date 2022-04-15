@@ -12,11 +12,14 @@
 #include <stdbool.h>
 #include <string.h>
 #include <inttypes.h>
+#include <math.h>
 #include "base64.h"
 #include "key.h"
 
 // Definitions
 //#define DEBUG
+#define MIN(a, b) (((a) < (b)) ? (a) : (b))
+#define VERSION "02.01"
 
 // Variabiles
 bool error = false;
@@ -27,6 +30,11 @@ size_t messageLength;
 // Function declaration
 bool getHelp(int argc, char *argv[]);
 bool getVerbose(int argc, char *argv[]);
+bool getVersion(int argc, char *argv[]);
+bool getIfText(int argc, char *argv[]);
+bool getIfFile(int argc, char *argv[]);
+char *getInputFileName(int argc, char *argv[]);
+char *getOutputFileName(int argc, char *argv[]);
 uint64_t getKey(int argc, char *argv[]);
 uint64_t *getMessage(int argc, char *argv[]);
 size_t getMessageLength();
@@ -84,6 +92,89 @@ bool getVerbose(int argc, char *argv[])
 }
 
 /**
+ * @brief Get the Version object
+ *
+ * @param argc number of command line arguments
+ * @param argv command line arguments
+ * @return true version is asked
+ * @return false version isn't asked
+ */
+bool getVersion(int argc, char *argv[])
+{
+    // Check if version
+    for (size_t i = 0; i < argc; ++i)
+    {
+        if (strcmp(argv[i], "--version") == 0)
+            return true;
+    }
+    return false;
+}
+
+/**
+ * @brief Get the If Text object
+ *
+ * @param argc number of command line arguments
+ * @param argv command line arguments
+ * @return true text version is asked
+ * @return false text version isn't asked
+ */
+bool getIfText(int argc, char *argv[])
+{
+    // Check if text input/ output
+    for (size_t i = 0; i < argc; ++i)
+    {
+        if (strcmp(argv[i], "--text") == 0 || strcmp(argv[i], "-txt") == 0)
+            return true;
+    }
+    return false;
+}
+
+/**
+ * @brief Get the If File object
+ *
+ * @param argc number of command line arguments
+ * @param argv command line arguments
+ * @return true file version is asked
+ * @return false file version isn't asked
+ */
+bool getIfFile(int argc, char *argv[])
+{
+    return (getIndex(argc, argv, "--file-input=") != -1 && getIndex(argc, argv, "--file-output=") != -1);
+}
+
+/**
+ * @brief Get the File Input Name object
+ *
+ * @param argc number of command line arguments
+ * @param argv command line arguments
+ * @return char* file name
+ */
+char *getInputFileName(int argc, char *argv[])
+{
+    // Get the file input name
+    char *fileName = "--file-input=";
+
+    // Return the file input name
+    return argv[getIndex(argc, argv, fileName)] + strlen(fileName);
+}
+
+/**
+ * @brief Get the File Output Name object
+ *
+ * @param argc number of command line arguments
+ * @param argv command line arguments
+ * @return char* file name
+ */
+char *getOutputFileName(int argc, char *argv[])
+{
+    // Get the file output name
+    char *fileName = "--file-output=";
+
+    // Return the file output name
+    return argv[getIndex(argc, argv, fileName)] + strlen(fileName);
+}
+
+/**
  * @brief Get the Key object
  *
  * @param argc number of command line arguments
@@ -136,34 +227,93 @@ uint64_t getKey(int argc, char *argv[])
  */
 uint64_t *getMessage(int argc, char *argv[])
 {
-    if (!salvedMessage)
+    if (!salvedMessage) // Get message from file
     {
-        char *m = "--message=";
-        int index = getIndex(argc, argv, m);
-        char *message;
 
-        if (index == -1)
+        if (getIfFile(argc, argv))
         {
-            error = true;
+            // Get the file
+            FILE *file = fopen(getInputFileName(argc, argv), "rb");
+
+            if (file == NULL)
+            {
+                error = true;
+            }
+            else
+            {
+                // Get the file size
+                fseek(file, 0L, SEEK_END);
+                size_t fileSize = MIN(ftell(file), 1024 * 1024 * 16); // up to 16MB
+                fseek(file, 0L, SEEK_SET);
+
+                // Allocate memory
+                messageLength = (fileSize * sizeof(char) + sizeof(uint64_t) - 1) / sizeof(uint64_t);
+                salvedMessage = malloc(messageLength * sizeof(uint64_t));
+                size_t extra_bytes = messageLength * sizeof(uint64_t) / sizeof(char) - fileSize;
+
+                // Read the file
+                fread(salvedMessage, fileSize, 1, file);
+
+                // Close the file
+                fclose(file);
+            }
         }
         else
         {
-            message = argv[index] + strlen(m);
-            uint8_t *tmp = base64_decode(message, strlen(message), false);
-            messageLength = (getLastBase64Length() + 8 - 1) / 8;
-            uint64_t *result = malloc(sizeof(uint64_t) * messageLength);
+            char *m = "--message=";
+            int index = getIndex(argc, argv, m);
+            char *message;
 
-            for (size_t i = 0; i < messageLength; ++i)
+            if (index == -1)
             {
-                result[i] = 0;
-                for (size_t j = 0; j < 8; ++j)
+                error = true;
+            }
+            else
+            {
+                message = argv[index] + strlen(m);
+                if (getIfText(argc, argv) && getEncrypt(argc, argv)) // Get message from text input
                 {
-                    result[i] <<= 8;
-                    if (i * 8 + j < getLastBase64Length())
-                        result[i] |= tmp[i * 8 + j] & 0xff;
+                    messageLength = (strlen(message) * sizeof(char) + sizeof(uint64_t) - 1) / sizeof(uint64_t);
+                    uint64_t *result = malloc(sizeof(uint64_t) * messageLength);
+
+                    for (size_t i = 0; i < messageLength; ++i)
+                    {
+                        for (size_t j = 0; j < sizeof(uint64_t) / sizeof(char); ++j)
+                        {
+                            result[i] <<= 8;
+                            if (i * sizeof(uint64_t) + j < strlen(message))
+                                result[i] |= (uint64_t)(message[i * sizeof(uint64_t) + j]);
+                            else
+                                result[i] |= (uint64_t)('\0');
+                        }
+                    }
+
+                    salvedMessage = result;
+                }
+                else // Get message from base64 input
+                {
+                    // Add extra bytes to the message to ensure correct base64 conversion
+                    if (getEncrypt(argc, argv))
+                        message = dirty(message, strlen(message));
+
+                    // Convert message
+                    uint8_t *tmp = base64_decode(message, strlen(message), false);
+                    messageLength = (getLastBase64Length() + 8 - 1) / 8;
+                    uint64_t *result = malloc(sizeof(uint64_t) * messageLength);
+
+                    for (size_t i = 0; i < messageLength; ++i)
+                    {
+                        result[i] = 0;
+                        for (size_t j = 0; j < 8; ++j)
+                        {
+                            result[i] <<= 8;
+                            if (i * 8 + j < getLastBase64Length())
+                                result[i] |= tmp[i * 8 + j] & 0xff;
+                        }
+                    }
+                    salvedMessage = result;
                 }
             }
-            salvedMessage = result;
         }
     }
     return salvedMessage;
@@ -265,7 +415,7 @@ bool manageInput(int argc, char *argv[])
     // if verbose print command line arguments
     if (verbose)
     {
-        printf("ℹ️ Command line arguments:\n");
+        printf("ℹ️\tCommand line arguments:\n");
 
         for (size_t i = 0; i < argc; ++i)
         {
@@ -275,28 +425,38 @@ bool manageInput(int argc, char *argv[])
 
     // Get verbose
     if (verbose)
-        printf("ℹ️ Verbose: %s\n", (verbose ? "true" : "false"));
+        printf("ℹ️\tVerbose: %s\n", (verbose ? "true" : "false"));
 
     // Check if new key is asked
     if (verbose)
-        printf("ℹ️ Check new key request\n");
+        printf("ℹ️\tCheck new key request\n");
     if (getNewKeyRequest(argc, argv))
     {
         printf("➡️ New key generated: %s\n", getNewKey(verbose));
         return true;
     }
+
     // Check if help
     if (verbose)
-        printf("ℹ️ Check help\n");
+        printf("ℹ️\tCheck help\n");
     if (getHelp(argc, argv))
     {
         system("man 1 des");
         return true;
     }
 
+    // Check if version asked
+    if (verbose)
+        printf("ℹ️\tCheck version\n");
+    if (getVersion(argc, argv))
+    {
+        printf("Version: %s\n", VERSION);
+        return true;
+    }
+
     // Check if new key is asked
     if (verbose)
-        printf("ℹ️ Check new key request\n");
+        printf("ℹ️\tCheck new key request\n");
     if (getNewKeyRequest(argc, argv))
     {
         printf("➡️ New key generated: %s\n", getNewKey(verbose));
@@ -305,7 +465,7 @@ bool manageInput(int argc, char *argv[])
 
     // Check key
     if (verbose)
-        printf("ℹ️ Check given key\n");
+        printf("ℹ️\tCheck given key\n");
     if (!checkKey(getKey(argc, argv)))
     {
         printf("⚠️⚠️⚠️\nThe key is damaged.\nPlease generate a new one.\n");
@@ -314,11 +474,11 @@ bool manageInput(int argc, char *argv[])
 
     // Get encryption
     if (verbose)
-        printf("ℹ️ Encryption: %s\n", (verbose ? "true" : "false"));
+        printf("ℹ️\tEncryption: %s\n", (verbose ? "true" : "false"));
 
     // End message
     if (verbose)
-        printf("ℹ️ Command line arguments: ok\n");
+        printf("ℹ️\tCommand line arguments: ok\n");
 
     return false;
 }

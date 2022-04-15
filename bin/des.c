@@ -8,23 +8,21 @@
 #include "lib/input.h"
 #include "lib/des.h"
 #include "lib/logo.h"
+#include "lib/stopwatch.h"
 
 // Definitions
 //#define DEBUG
 
 int main(int argc, char *argv[])
 {
-    // Start stopwatch
-    clock_t start, end;
-    double cpu_time_used;
-    start = clock();
-
     // Get verbose
     bool verbose = getVerbose(argc, argv);
 
     // Logo
-    if (verbose)
-        getLogo();
+    getLogo();
+
+    // Start stopwatch
+    startStopwatch();
 
     // Manage input
     if (manageInput(argc, argv))
@@ -37,7 +35,7 @@ int main(int argc, char *argv[])
             getMessage(argc, argv)[i],
             getKey(argc, argv),
             getEncrypt(argc, argv),
-            verbose);
+            verbose && i == 0); // If verbose, print only the first message
 
     // Encode base64
     size_t len = getMessageLength() * sizeof(uint64_t);
@@ -52,14 +50,43 @@ int main(int argc, char *argv[])
     char *output = base64_encode(m8bit, len, verbose);
 
     // Stop stopwatch
-    end = clock();
-    cpu_time_used = ((double)(end - start)) / CLOCKS_PER_SEC;
+    stopStopwatch();
 
     // Print output
-    printf("%s message: %s\nIn %0.3fµs\n",
-           (getEncrypt(argc, argv) ? "Encrypted" : "Decrypted"),
-           output,
-           cpu_time_used * 1000);
+    if (getIfFile(argc, argv))
+    {
+        // Calculate extra padding
+        size_t padding = 0;
+        if (!getEncrypt(argc, argv))
+            while (((u_int64_t)0xff << 8 * (8 - padding - 1) & m[getMessageLength() - 1]) == (uint8_t)0x00)
+                padding++;
+
+        // Save output to file
+        FILE *file = fopen(getOutputFileName(argc, argv), "wb");
+        fwrite(m, getMessageLength() * sizeof(u_int64_t) - padding, 1, file);
+        fclose(file);
+
+        // Print
+        printf("📝\t%s to: %s (%ld Byte)\n",
+            (getEncrypt(argc, argv) ? "Encrypted" : "Decrypted"),
+            getOutputFileName(argc, argv),
+            getMessageLength() * sizeof(u_int64_t) - padding);
+    }
+    else if (getIfText(argc, argv) && !getEncrypt(argc, argv))
+    {
+        // Print
+        printf("📝\tDecrypted message: %s\n", (char *)m8bit);
+    }
+    else // base64
+    {
+        // Print
+        printf("📝\t%s message: %s\n",
+            (getEncrypt(argc, argv) ? "Encrypted" : "Decrypted"),
+            clean(output, strlen(output)));
+    }
+
+    // Print stopwatch
+    printf("⏰\tIn: %s\n", getStopwatch());
 
     return 0;
 }

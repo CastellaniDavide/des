@@ -12,6 +12,7 @@
 // Dependencies
 #include <stdint.h>
 #include <stdlib.h>
+#include <time.h>
 #include "binary.h"
 
 // Definitions
@@ -31,8 +32,10 @@ static int mod_table[] = {0, 2, 1};
 size_t base64length;
 
 // Function declaration
-u_int8_t *base64_encode(const u_int8_t *input, size_t input_length, bool verbose);
-u_int8_t *base64_decode(const u_int8_t *input, size_t input_length, bool verbose);
+uint8_t *base64_encode(const u_int8_t *input, size_t input_length, bool verbose);
+uint8_t *base64_decode(const u_int8_t *input, size_t input_length, bool verbose);
+uint8_t *dirty(uint8_t *input, size_t input_length);
+uint8_t *clean(uint8_t *input, size_t input_length);
 void build_decoding_table();
 size_t getLastBase64Length();
 
@@ -81,7 +84,7 @@ u_int8_t *base64_encode(const u_int8_t *input, size_t input_length, bool verbose
     // Print if verbose
     if (verbose)
     {
-        printf("⚙️ Encoded data:\n\tOriginal: ");
+        printf("⚙️\tEncoded data:\n\tOriginal: ");
         for (size_t i = 0; i < input_length; ++i)
             printf("%s", getBinary(input[i], 8, 8));
         printf("\n\tEncoded: %s\n", output);
@@ -103,7 +106,10 @@ u_int8_t *base64_decode(const u_int8_t *input, size_t input_length, bool verbose
 {
     // Check
     if (input_length % 4 != 0)
-        return NULL;
+    {
+        printf("⚠️⚠️⚠️ Base64 decode error: input length is not a multiple of 4\n");
+        exit(1);
+    }
 
     // Create decoding table if not exists
     if (decoding_table == NULL)
@@ -145,7 +151,7 @@ u_int8_t *base64_decode(const u_int8_t *input, size_t input_length, bool verbose
     // Print if verbose
     if (verbose)
     {
-        printf("⚙️ Decoded data:\n\tOriginal: %s\n\tDecoded: ", input);
+        printf("⚙️\tDecoded data:\n\tOriginal: %s\n\tDecoded: ", input);
         for (size_t i = 0; i < output_length; ++i)
             printf("%s", getBinary(output[i], 8, 8));
         printf("\n");
@@ -175,6 +181,65 @@ void build_decoding_table()
 
     for (int i = 0; i < 64; i++)
         decoding_table[(u_int8_t)encoding_table[i]] = i;
+}
+
+/**
+ * @brief Add random bytes to the input to ensure the correct convertion to base64
+ * 
+ * @param input message to add random bytes
+ * @param input_length length of the input
+ * @return uint8_t* message with random bytes
+ */
+uint8_t *dirty(uint8_t *input, size_t input_length)
+{
+    // Get the number of final =
+    size_t eq = 0;
+    while (input[input_length - 1 - eq] == '=')
+        eq++;
+        
+    // Initialize random seed
+    time_t t;
+    srand((unsigned)time(&t));
+    
+    // Initialize output
+    uint8_t *output = malloc(input_length + 4);
+
+    // Copy input to output
+    for (size_t i = 0; i < input_length - eq; i++)
+        output[i] = input[i];
+
+    // Add random bytes
+    for (size_t i = input_length - eq; i < input_length - eq + 4; i++)
+        output[i] = encoding_table[rand() % 64];
+
+    // Add final =
+    for (size_t i = input_length - eq + 4; i < input_length + 4; i++)
+        output[i] = '=';
+    
+    // Return
+    return output;
+}
+
+uint8_t *clean(uint8_t *input, size_t input_length)
+{
+    // Get the number of final =
+    size_t eq = 0;
+    while (input[input_length - 1 - eq] == '=')
+        eq++;
+
+    // Initialize output
+    uint8_t *output = malloc(input_length - 4);
+
+    // Copy input to output
+    for (size_t i = 0; i < input_length - eq - 4; i++)
+        output[i] = input[i];
+
+    // Add final =
+    for (size_t i = input_length - eq - 4; i < input_length - 4; i++)
+        output[i] = '=';
+
+    // Return
+    return output;
 }
 
 #undef DEBUG
