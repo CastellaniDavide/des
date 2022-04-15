@@ -19,7 +19,8 @@ Implementation of DES algorithm
 │       ├── des.h
 │       ├── input.h
 │       ├── key.h
-│       └── logo.h
+│       ├── logo.h
+│       └── stopwatch.h
 ├── debian # debian control code
 │   ├── changelog
 │   ├── compat
@@ -36,9 +37,21 @@ Implementation of DES algorithm
     ├── LICENSE
     └── README.md
 
-5 directories, 20 files
+5 directories, 21 files
 ```
 ## Changelog
+des (02.01) focal; urgency=medium
+
+  * Fixed base64 bug (now it's possible encrypt and decrypt correctly messages as "castellani==" in base64)
+  * Added encryption and decryption of text messages
+  * Added encryption and decryption of files (up to 16MB)
+  * Optimized the prints
+  * Now it always prints the logo :)
+  * Optimized logo
+  * Added --version option
+
+ -- Castellani Davide <help@castellanidavide.it>  Fri, 15 Apr 2022 17:00:00 +1000
+
 des (01.02) focal; urgency=medium
 
   * fixed a bug
