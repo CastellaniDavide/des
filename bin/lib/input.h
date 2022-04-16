@@ -458,7 +458,7 @@ bool manageInput(int argc, char *argv[])
         printf("ℹ️\tCheck new key request\n");
     if (getNewKeyRequest(argc, argv))
     {
-        printf("➡️ New key generated: %s\n", getNewKey(verbose));
+        printf("➡️\tNew key generated: %s\n", getNewKey(verbose));
         return true;
     }
 

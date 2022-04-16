@@ -15,7 +15,7 @@
 
 // Definitions
 //#define DEBUG
-#define HEIGHT 25
+#define HEIGHT 24
 #define WIDTH 170
 
 // Variabiles
@@ -42,8 +42,7 @@ char logo[HEIGHT][WIDTH] = {
     " |_______/  \\____  $$       \\______/  \\_______/|_______/    \\___/   \\_______/|__/|__/ \\_______/|__/  |__/|__/      |_______/  \\_______/    \\_/    |__/ \\_______/ \\_______/",
     "            /$$  | $$                                                                                                                                                     ",
     "           |  $$$$$$/                                                                                                                                                     ",
-    "            \\______/                                                                                                                                                      ",
-    "                                                                                                                                                                          "};
+    "            \\______/                                                                                                                                                      "};
 
 char *colors[7] = {
     "\x1B[31m", // Red
@@ -84,7 +83,7 @@ void getLogo()
     }
 
     // Reset 
-    printf("%s", rst);
+    printf("%s\n", rst);
 }
 
 #undef DEBUG
