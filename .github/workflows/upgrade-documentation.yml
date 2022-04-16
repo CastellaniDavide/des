@@ -113,8 +113,6 @@ jobs:
         echo "sudo dpkg -r des" >> HowToInstallUpdateRemove.md
         echo "```" >> HowToInstallUpdateRemove.md
         echo "" >> HowToInstallUpdateRemove.md
-    - name: README.md file
-        sed -i 's/# /## /g' changelog
     - name: Directory structure file
       run: |
         cd wiki
