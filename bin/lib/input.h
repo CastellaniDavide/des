@@ -19,7 +19,6 @@
 // Definitions
 //#define DEBUG
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
-#define VERSION "02.01"
 
 // Variabiles
 bool error = false;
@@ -436,21 +435,21 @@ bool manageInput(int argc, char *argv[])
         return true;
     }
 
+    // Check if version asked
+    if (verbose)
+        printf("ℹ️\tCheck version\n");
+    if (getVersion(argc, argv))
+    {
+        system("dpkg -s des | grep '^Version:'");
+        return true;
+    }
+
     // Check if help
     if (verbose)
         printf("ℹ️\tCheck help\n");
     if (getHelp(argc, argv))
     {
         system("man 1 des");
-        return true;
-    }
-
-    // Check if version asked
-    if (verbose)
-        printf("ℹ️\tCheck version\n");
-    if (getVersion(argc, argv))
-    {
-        printf("Version: %s\n", VERSION);
         return true;
     }
 

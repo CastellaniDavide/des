@@ -47,7 +47,7 @@ int main(int argc, char *argv[])
     while (m8bit[len - 1] == 0) // "Remove" \0 bytes
         len--;
 
-    char *output = base64_encode(m8bit, len, verbose);
+    char *output = base64_encode(dirty(m8bit, len), len + 4, verbose);
 
     // Stop stopwatch
     stopStopwatch();
@@ -75,7 +75,7 @@ int main(int argc, char *argv[])
     else if (getIfText(argc, argv) && !getEncrypt(argc, argv))
     {
         // Print
-        printf("📝\tDecrypted message: %s\n", (char *)m8bit);
+        printf("📝\tDecrypted message: %s\n", (char *)clean((char *)clean((char *)m8bit, len), len - 4));
     }
     else // base64
     {

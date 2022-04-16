@@ -63,6 +63,58 @@ jobs:
         cd wiki
         sed -i 's/Changelog/:octocat: Changelog :octocat:/g' changelog
         sed -i 's/# /## /g' changelog
+    - name: HowToInstallUpdateRemove file
+      run: |
+        cd wiki
+        echo ":octocat: Changelog :octocat:" >> HowToInstallUpdateRemove.md
+        echo "## How to install/ update/ remove" >> HowToInstallUpdateRemove.md
+        echo "To install this application you need Ubuntu or Debian OS." >> HowToInstallUpdateRemove.md
+        echo "" >> HowToInstallUpdateRemove.md
+        echo "If you have Windows you can use WSL: [ufficial guide](https://docs.microsoft.com/en-us/windows/wsl/)" >> HowToInstallUpdateRemove.md
+        echo "" >> HowToInstallUpdateRemove.md
+        echo "If you have MacOS you can use Homebrew: [official guide](https://brew.sh/)" >> HowToInstallUpdateRemove.md
+        echo "" >> HowToInstallUpdateRemove.md
+        echo "### Ubuntu" >> HowToInstallUpdateRemove.md
+        echo "#### Install" >> HowToInstallUpdateRemove.md
+        echo "First you need to add ppa to your system:" >> HowToInstallUpdateRemove.md
+        echo "```" >> HowToInstallUpdateRemove.md
+        echo "sudo add-apt-repository ppa:castellanidavide/school" >> HowToInstallUpdateRemove.md
+        echo "sudo apt update" >> HowToInstallUpdateRemove.md
+        echo "```" >> HowToInstallUpdateRemove.md
+        echo "" >> HowToInstallUpdateRemove.md
+        echo "Then you can install the application:" >> HowToInstallUpdateRemove.md
+        echo "```" >> HowToInstallUpdateRemove.md
+        echo "sudo apt install des" >> HowToInstallUpdateRemove.md
+        echo "```" >> HowToInstallUpdateRemove.md
+        echo "" >> HowToInstallUpdateRemove.md
+        echo "#### Update" >> HowToInstallUpdateRemove.md
+        echo "To update the application you can use:" >> HowToInstallUpdateRemove.md
+        echo "```" >> HowToInstallUpdateRemove.md
+        echo "sudo apt update && sudo apt upgrade" >> HowToInstallUpdateRemove.md
+        echo "```" >> HowToInstallUpdateRemove.md
+        echo "" >> HowToInstallUpdateRemove.md
+        echo "#### Remove" >> HowToInstallUpdateRemove.md
+        echo "To uninstall the application you can use:" >> HowToInstallUpdateRemove.md
+        echo "```" >> HowToInstallUpdateRemove.md
+        echo "sudo apt remove des" >> HowToInstallUpdateRemove.md
+        echo "```" >> HowToInstallUpdateRemove.md
+        echo "### Debian" >> HowToInstallUpdateRemove.md
+        echo "#### Install / Update" >> HowToInstallUpdateRemove.md
+        echo "To install the application you need to dowload the package from [releases]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/releases)." >> HowToInstallUpdateRemove.md
+        echo "" >> HowToInstallUpdateRemove.md
+        echo "Then you can install the application:" >> HowToInstallUpdateRemove.md
+        echo "```" >> HowToInstallUpdateRemove.md
+        echo "sudo dpkg -i des_*.deb" >> HowToInstallUpdateRemove.md
+        echo "```" >> HowToInstallUpdateRemove.md
+        echo "" >> HowToInstallUpdateRemove.md
+        echo "#### Remove" >> HowToInstallUpdateRemove.md
+        echo "To uninstall the application you can use:" >> HowToInstallUpdateRemove.md
+        echo "```" >> HowToInstallUpdateRemove.md
+        echo "sudo dpkg -r des" >> HowToInstallUpdateRemove.md
+        echo "```" >> HowToInstallUpdateRemove.md
+        echo "" >> HowToInstallUpdateRemove.md
+    - name: README.md file
+        sed -i 's/# /## /g' changelog
     - name: Directory structure file
       run: |
         cd wiki
@@ -95,6 +147,7 @@ jobs:
       run: |
         cat wiki/_Header.md > repo/docs/README.md
         cat wiki/Home.md >> repo/docs/README.md
+        cat wiki/HowToInstallUpdateRemove.md >> repo/docs/README.md
         cat wiki/Directory-Structure.md >> repo/docs/README.md
         echo "## Changelog" >> repo/docs/README.md
         cat wiki/changelog >> repo/docs/README.md
