@@ -74,6 +74,12 @@ To uninstall the application you can use:
 5 directories, 21 files
 ```
 ## Changelog
+des (02.03) focal; urgency=medium
+
+  * fixed a bug
+
+ -- Castellani Davide <help@castellanidavide.it>  Sat, 16 Apr 2022 14:45:00 +1000
+
 des (02.02) focal; urgency=medium
 
   * Upgrade documentation
